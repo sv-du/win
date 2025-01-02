@@ -25,7 +25,6 @@ Set-Acl "HKLM:\SAM\SAM" -AclObject $rootACL
 
 .\tools\regjump.exe -accepteula HKEY_LOCAL_MACHINE\SAM\SAM
 
-Write-Output "Since I can't script this without potentially throwing access denined errors, here's what you need to do"
 Write-Output "Right Click highlighted key > Permissions > Advanced > Check 'Replace all child object permissions...' > OK > Yes"
 
 pause
