@@ -1454,6 +1454,7 @@ Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -Foregrou
 
 Set-Item -Path WSMan:\localhost\Service\Auth\Basic -Value $false
 Set-Item -Path WSMan:\localhost\Client\Auth\Kerberos -Value $true
+Clear-Item -Path WSMan:\localhost\Client\TrustedHosts -Force
 winrm create winrm/config/Listener?Address=*+Transport=HTTPS @{}
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Mitigate CVE-2022-0001" -ForegroundColor white
@@ -1706,3 +1707,61 @@ foreach($df in $defaultFilters) {
 }
 
 reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa" /v "Notification Packages" /t REG_MULTI_SZ /d $newFilters /f
+
+Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Disable Credential Delegation" -ForegroundColor white
+
+reg delete HKLM\SOFTWARE\Policies\Microsoft\Windows\CredentialsDelegation /f
+
+Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Detect TimeProvider persistence" -ForegroundColor white
+
+$ntpClient = (Get-ItemProperty "HKLM://SYSTEM\CurrentControlSet\Services\W32Time\TimeProviders\NtpClient").DllName
+$ntpServer = (Get-ItemProperty "HKLM://SYSTEM\CurrentControlSet\Services\W32Time\TimeProviders\NtpServer").DllName
+$vmicTimeProvider = (Get-ItemProperty "HKLM://SYSTEM\CurrentControlSet\Services\W32Time\TimeProviders\VMICTimeProvider").DllName
+
+$timePersistenceDetected = $false
+
+if($ntpClient.ToLower() -ne "c:\windows\system32\w32time.dll") {
+    Write-Host "Persistence Detected! Investigate the following DLL: $ntpClient" -ForegroundColor Red
+    $timePersistenceDetected = $true
+}
+
+if($ntpServer.ToLower() -ne "c:\windows\system32\w32time.dll") {
+    Write-Host "Persistence Detected! Investigate the following DLL: $ntpServer" -ForegroundColor Red
+    $timePersistenceDetected = $true
+}
+
+if($vmicTimeProvider.ToLower() -ne "c:\windows\system32\vmictimeprovider.dll") {
+    Write-Host "Persistence Detected! Investigate the following DLL: $ntpServer" -ForegroundColor Red
+    $timePersistenceDetected = $true
+}
+
+if($timePersistenceDetected) { pause }
+
+reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\W32Time\TimeProviders\NtpClient" /v DllName /t REG_EXPAND_SZ /d "C:\Windows\System32\w32time.dll" /f | Out-Null
+reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\W32Time\TimeProviders\NtpServer" /v DllName /t REG_EXPAND_SZ /d "C:\Windows\System32\w32time.dll" /f | Out-Null
+reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\W32Time\TimeProviders\VMICTimeProvider" /v DllName /t REG_EXPAND_SZ /d "C:\Windows\System32\vmictimeprovider.dll" /f | Out-Null
+
+
+Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Detect Powershell Profile persistence" -ForegroundColor white
+
+$profilePaths = $PROFILE | Select-Object *
+
+if(Test-Path $profilePaths.AllUsersAllHosts) {
+    Write-Host "System Powershell profile found! Investigate the following file: $($profilePaths.AllUsersAllHosts)" -ForegroundColor Red
+    pause
+}
+
+if(Test-Path $profilePaths.AllUsersCurrentHost) {
+    Write-Host "System Powershell profile found! Investigate the following file: $($profilePaths.AllUsersCurrentHost)" -ForegroundColor Red
+    pause
+}
+
+if(Test-Path $profilePaths.CurrentUserAllHosts) {
+    Write-Host "User Powershell profile found! Investigate the following file: $($profilePaths.CurrentUserAllHosts)" -ForegroundColor Red
+    pause
+}
+
+if(Test-Path $profilePaths.CurrentUserCurrentHost) {
+    Write-Host "User Powershell profile found! Investigate the following file: $($profilePaths.CurrentUserCurrentHost)" -ForegroundColor Red
+    pause
+}
