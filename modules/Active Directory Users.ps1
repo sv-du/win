@@ -130,15 +130,6 @@ foreach($user in $userData.Keys) {
 
 $ErrorActionPreference = "Continue"
 
-Write-Output "Clearing group ManagedBy delegations"
-
-Get-ADGroup -Filter * | ForEach-Object {
-    if($_.ManagedBy) {
-        Write-Output "Clearing ManagedBy delegation for the following group: $($_.Name)"
-        Set-ADGroup $_ -Clear ManagedBy
-    }
-}
-
 Write-Output "Setting all users primary group to 'Domain Users'"
 
 $users = Get-ADUser -Filter *

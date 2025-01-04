@@ -392,12 +392,43 @@ Get-ADOrganizationalUnit -Filter * | ForEach-Object {
     }
 }
 
-Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Resetting the explicit ACLs on common, heavily abused, AD objects" -ForegroundColor white
+Get-ADGroup -Filter * | ForEach-Object {
+    if($_.ManagedBy) {
+        Write-Output "Clearing ManagedBy delegation for the following group: $($_.Name)"
+        Set-ADGroup $_ -Clear ManagedBy
+    }
+}
 
-Write-Host "At the moment, this is not implemented, do this yourself" -ForegroundColor Red
-pause
+Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Resetting the ACLs on common, heavily abused, AD objects" -ForegroundColor white
 
-# Reset domains, the root OUs, computers (including DC), user objects, and groups
+# Reset domains (and the root OUs), computers, user objects, and groups
+
+Get-ADDomain | ForEach-Object {
+    dsacls "$($_.DistinguishedName)" /resetDefaultDACL /resetDefaultSACL | Out-Null
+    dsacls "CN=Builtin,$($_.DistinguishedName)" /resetDefaultDACL /resetDefaultSACL | Out-Null
+    dsacls "$($_.ComputersContainer)" /resetDefaultDACL /resetDefaultSACL | Out-Null
+    dsacls "$($_.DomainControllersContainer)" /resetDefaultDACL /resetDefaultSACL | Out-Null
+    dsacls "$($_.ForeignSecurityPrincipalsContainer)" /resetDefaultDACL /resetDefaultSACL | Out-Null
+    dsacls "$($_.LostAndFoundContainer)" /resetDefaultDACL /resetDefaultSACL | Out-Null
+    dsacls "CN=Managed Service Accounts,$($_.DistinguishedName)" /resetDefaultDACL /resetDefaultSACL | Out-Null
+    dsacls "CN=Program Data,$($_.DistinguishedName)" /resetDefaultDACL /resetDefaultSACL | Out-Null
+    dsacls "$($_.SystemsContainer)" /resetDefaultDACL /resetDefaultSACL | Out-Null
+    dsacls "$($_.UsersContainer)" /resetDefaultDACL /resetDefaultSACL | Out-Null
+    dsacls "$($_.QuotasContainer)" /resetDefaultDACL /resetDefaultSACL | Out-Null
+    dsacls "CN=TPM Devices,$($_.DistinguishedName)" /resetDefaultDACL /resetDefaultSACL | Out-Null
+}
+
+Get-ADComputer -Filter * | ForEach-Object {
+    dsacls "$($_.DistinguishedName)" /resetDefaultDACL /resetDefaultSACL | Out-Null
+}
+
+Get-ADUser -Filter * | ForEach-Object {
+    dsacls "$($_.DistinguishedName)" /resetDefaultDACL /resetDefaultSACL | Out-Null
+}
+
+Get-ADGroup -Filter * | ForEach-Object {
+    dsacls "$($_.DistinguishedName)" /resetDefaultDACL /resetDefaultSACL | Out-Null
+}
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Marking all non-DC computers as not trusted for delegation" -ForegroundColor white
 
