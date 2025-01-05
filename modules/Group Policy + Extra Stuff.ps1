@@ -661,6 +661,7 @@ reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\MicrosoftEdge\Phishin
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Harden Chrome" -ForegroundColor white
 
 reg add "HKLM\SOFTWARE\Policies\Google\Chrome" /v "AllowCrossOriginAuthPrompt" /t REG_DWORD /d 0 /f
+reg add "HKLM\SOFTWARE\Policies\Google\Chrome" /v "HttpsOnlyMode" /t REG_DWORD /d 1 /f
 reg add "HKLM\SOFTWARE\Policies\Google\Chrome" /v "AlwaysOpenPdfExternally" /t REG_DWORD /d 0 /f
 reg add "HKLM\SOFTWARE\Policies\Google\Chrome" /v "AmbientAuthenticationInPrivateModesEnabled" /t REG_DWORD /d 0 /f
 reg add "HKLM\SOFTWARE\Policies\Google\Chrome" /v "AudioCaptureAllowed" /t REG_DWORD /d 1 /f
@@ -1359,7 +1360,7 @@ $serverFlags = @{
     "AuditSmb1Access" = $True
     "AutoShareServer" = $False
     "AutoShareWorkstation" = $False
-    "DisableCompression" = $False
+    "DisableCompression" = $True
     "DisableSmbEncryptionOnSecureConnection" = $False
     "EnableAuthenticateUserSharing" = $True
     "EnableDownlevelTimewarp" = $False
@@ -1381,7 +1382,7 @@ $serverFlags = @{
 }
 
 $clientFlags = @{
-    "DisableCompression" = $False
+    "DisableCompression" = $True
     "EnableInsecureGuestLogons" = $False
     "EnableLargeMtu" = $True
     "EnableMultiChannel" = $True
@@ -1456,6 +1457,35 @@ Set-Item -Path WSMan:\localhost\Service\Auth\Basic -Value $false
 Set-Item -Path WSMan:\localhost\Client\Auth\Kerberos -Value $true
 Clear-Item -Path WSMan:\localhost\Client\TrustedHosts -Force
 winrm create winrm/config/Listener?Address=*+Transport=HTTPS @{}
+
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v AllowUnencryptedTraffic /t REG_DWORD /d 0 /f
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Client" /v AllowUnencryptedTraffic /t REG_DWORD /d 0 /f
+
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v AllowBasic /t REG_DWORD /d 0 /f
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Client" /v AllowBasic /t REG_DWORD /d 0 /f
+
+Disable-WSManCredSSP -Role Client
+Disable-WSManCredSSP -Role Server
+
+reg add "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WinRM\Client" /v AllowDigest /t REG_DWORD /d 0 /f
+
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v AllowNegotiate /t REG_DWORD /d 0 /f
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Client" /v AllowNegotiate /t REG_DWORD /d 0 /f
+
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v AllowKerberos /t REG_DWORD /d 1 /f
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Client" /v AllowKerberos /t REG_DWORD /d 1 /f
+
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v DisableRunAs /t REG_DWORD /d 1 /f
+
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v CBTHardeningLevelStatus /t REG_DWORD /d 1 /f
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v CbtHardeningLevel /t REG_SZ /d "Strict" /f
+
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v HttpCompatibilityListener /t REG_DWORD /d 0 /f
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v HttpsCompatibilityListener /t REG_DWORD /d 0 /f
+
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v AllowAutoConfig /t REG_DWORD /d 0 /f
+reg delete "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v IPv4Filter /f
+reg delete "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v IPv6Filter /f
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Mitigate CVE-2022-0001" -ForegroundColor white
 
@@ -1765,3 +1795,8 @@ if(Test-Path $profilePaths.CurrentUserCurrentHost) {
     Write-Host "User Powershell profile found! Investigate the following file: $($profilePaths.CurrentUserCurrentHost)" -ForegroundColor Red
     pause
 }
+
+Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Enable IE Security Prompts for Windows Installer" -ForegroundColor white
+
+reg add "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Installer" /v SafeForScripting /t REG_DWORD /d 0 /f
+
