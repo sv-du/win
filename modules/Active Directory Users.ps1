@@ -125,10 +125,16 @@ foreach($user in $userData.Keys) {
         Write-Output "Creating new user: $user"
         net.exe user /add "$user" $password /y
     }
-    $adUser = $null # If the command fails, it doesn't set $user to null
+    $adUser = $null # If the command fails, it doesn't set $adUser to null
 }
 
 $ErrorActionPreference = "Continue"
+
+Write-Output "Enabling all non-builtin accounts"
+
+$users = Get-ADUser -Filter * -Properties *
+
+foreach($user in $users) { Enable-ADAccount "$user" }
 
 Write-Output "Setting all users primary group to 'Domain Users'"
 

@@ -2,10 +2,10 @@ Import-Module WebAdministration
 Import-Module IISAdministration
 
 if ((Get-WindowsFeature Web-Server).InstallState -eq "Installed") {
-    # Set application pool identity type to LocalSystem (4) for all app pools
+    # Set application pool identity type to ApplicationPoolIdentity for all app pools
     foreach($item in (Get-ChildItem IIS:\AppPools)) {
         $tempPath = "IIS:\AppPools\" + $item.name
-        Set-ItemProperty -Path $tempPath -Name processModel.identityType -Value 4
+        Set-ItemProperty -Path $tempPath -Name processModel.identityType -Value "ApplicationPoolIdentity"
     }
 
     # Disable directory browsing for all sites

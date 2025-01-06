@@ -4,7 +4,7 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters" /v DisableP
 
 Set-DnsServerRRL -ResetToDefault -Force | Out-Null
 Set-DnsServerRRL -Mode Enable -Force | Out-Null
-Set-DnsServerResponseRateLimiting -ResetToDefault -Force
+Set-DnsServerResponseRateLimiting -ResetToDefault -Force | Out-Null
 
 Set-DnsServerDiagnostics -All $True | Out-Null
 Set-DnsServerDiagnostics -EventLogLevel 7 | Out-Null
@@ -40,6 +40,7 @@ dnscmd /config /DisableNSRecordsAutoCreation 1
 dnscmd /config /ednscachetimeout 604,800
 dnscmd /config /enableednsprobes 0
 dnscmd /config /enablednssec 1
+dnscmd /RetrieveRootTrustAnchors /f
 dnscmd /config /enableglobalnamessupport 0
 dnscmd /config /enableglobalqueryblocklist 1
 dnscmd /config /eventloglevel 4
@@ -104,4 +105,4 @@ DNSMgmt.msc
 
 Write-Output "For every zone, set dynamic updates to secure only and disable zone transfers, and sign the zones (use strongest encrption algos, might need to install the AD certificate services)"
 
-Write-Output "If applicable, integrate all DNS zones with Active Directory (change zone type on a zone label)"
+Write-Output "If applicable, integrate all DNS zones with Active Directory (change zone type on a zone label and check the bottom checkbox). This must be done before signing"

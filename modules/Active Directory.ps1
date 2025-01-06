@@ -440,6 +440,7 @@ Get-ADDomainController | ForEach-Object {
 
 Get-ADComputer -Filter * -Properties * | ForEach-Object {
     if($_.TrustedForDelegation -and !$domainControllers.Contains($_.Name)) {
+        Write-Output "Marking the computer $($_.Name) as not being trusted for delegation"
         Set-ADComputer $_ -TrustedForDelegation $False
     }
 }
@@ -463,3 +464,14 @@ if($version -eq "19") {
 }
 
 Set-Acl -Path "AD:CN=AdminSDHolder,CN=System,$((Get-ADRootDSE).rootDomainNamingContext)" -AclObject $acl
+
+Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Deleting fake computer accounts (ones with no OS defined)" -ForegroundColor white
+
+Get-ADComputer -Filter * -Properties * | ForEach-Object {
+    if(!$_.OperatingSystem) {
+        Remove-ADComputer $_ -Confirm:0
+    }
+}
+
+Write-Output "It's possible that fake computer accounts can still exist and they had an operating system manually defined. Check dsa.msc > Computers and investigate any if they aren't supposed to be there"
+pause

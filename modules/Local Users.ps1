@@ -122,6 +122,15 @@ foreach($user in $userData.Keys) {
     }
 }
 
+Write-Output "Enabling all non-builtin accounts"
+
+$users = Get-LocalUser
+
+foreach($user in $users) {
+    if($builtInAccounts.Contains($user.Name)) { continue }
+    net.exe user "$user" /active:yes
+}
+
 Write-Output "Removing the users in all the groups to reset them"
 
 $groups = Get-LocalGroup

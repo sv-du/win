@@ -5,9 +5,10 @@ if((Get-Service mpssvc).Status -ne "Running") {
 
 Write-Warning "Setting up firewall and configuring..."
 Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True
-Set-NetFirewallProfile -DefaultInboundAction Block -DefaultOutboundAction Allow -NotifyOnListen True -AllowUnicastResponseToMulticast True -LogFileName %SystemRoot%\System32\logfiles\firewall\domainfw.log
+Set-NetFirewallProfile -DefaultInboundAction Block -DefaultOutboundAction Allow -NotifyOnListen True-LogFileName %SystemRoot%\System32\logfiles\firewall\domainfw.log
 Set-NetFirewallProfile -LogBlocked True -LogMaxSizeKilobytes 16384 -LogAllowed True
 Set-NetFirewallProfile -Name Public -AllowLocalFirewallRules False
+netsh advfirewall set allprofiles settings unicastresponsetomulticast disable
 
 netsh advfirewall firewall set rule name="netcat" new enable=no
 netsh advfirewall firewall set rule name="Remote Assistance (DCOM-In)" new enable=no 
