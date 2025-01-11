@@ -28,8 +28,7 @@ foreach($ex in $extensions) {
         $sigCheckSigned = $sigCheckResult[1].split(":")[1].trim() -eq "Signed"
         $sigCheckVT = $sigCheckResult[16].split(":")[1].trim().split("/")[0] -eq "0"
         if((!$psSignResult -or !$sigCheckSigned) -and !$sigCheckVT) {
-            Write-Output "File, '$path', is not signed and has a non-zero VirusTotal detection result"
-            Write-Output ""
+            Write-Host "File, '$path', is not signed and has a non-zero VirusTotal detection result" -ForegroundColor Red
         }
     }
 }

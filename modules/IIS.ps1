@@ -54,7 +54,7 @@ foreach ($webapp in $webapps) {
         if ($credentialsElement -ne $null) {
             $credentialsElement.ParentNode.RemoveChild($credentialsElement)
             $webConfig.Save($webConfigPath)
-            Write-Host "Removed 'credentials' element from $webConfigPath"
+            Write-Output "Removed 'credentials' element from $webConfigPath"
         }
     }
 }
