@@ -10,6 +10,7 @@ Set-DnsServerDiagnostics -All $True | Out-Null
 Set-DnsServerDiagnostics -EventLogLevel 7 | Out-Null
 Set-DnsServerDiagnostics -UseSystemEventLog $True | Out-Null
 Set-DnsServerDiagnostics -EnableLogFileRollover $False | Out-Null
+wevtutil set-log Microsoft-Windows-DNSServer/Analytical /e:true
 
 Set-DnsServerRecursion -Enable $False | Out-Null
 Set-DnsServerRecursion -SecureResponse $True | Out-Null
@@ -103,6 +104,8 @@ net start DNS
 
 DNSMgmt.msc
 
-Write-Output "For every zone, set dynamic updates to secure only and disable zone transfers, and sign the zones (use strongest encrption algos, might need to install the AD certificate services)"
+Write-Output "For every zone, set dynamic updates to secure only, disable zone transfers, set zone replication to domain without compatibility, and sign the zones (use strongest encrption algos, might need to install the AD certificate services)"
 
 Write-Output "If applicable, integrate all DNS zones with Active Directory (change zone type on a zone label and check the bottom checkbox). This must be done before signing"
+
+Write-Output "In the DNS server properties, check all check marks, load data from AD and registry, and set the savaging period to 7 days"

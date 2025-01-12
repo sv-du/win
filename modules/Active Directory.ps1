@@ -475,3 +475,11 @@ Get-ADComputer -Filter * -Properties * | ForEach-Object {
 
 Write-Output "It's possible that fake computer accounts can still exist and they had an operating system manually defined. Check dsa.msc > Computers and investigate any if they aren't supposed to be there"
 pause
+
+Get-GPO -All | ForEach-Object {
+    Get-GPPermissions "$($_.DisplayName)" -All | ForEach-Object {
+        if($_.Trustee.Name -eq "Authenticated Users") {
+            Write-Output $_
+        }
+    }
+}

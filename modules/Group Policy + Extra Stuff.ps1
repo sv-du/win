@@ -80,6 +80,8 @@ if($isADInstalled) {
         Write-Output "GPO $($GPO.DisplayName) status set to AllSettingsDisabled"
     }
     gpupdate.exe /force
+    clear
+    Write-Output "Check GPO permissions manually (gpmc.msc > Domains > <domain name> > Group Policy Objects > <gp name> > Delegation > Right Click Entry)"
 }
 
 $cleanGPO = (Read-Host "Nuke the GPO? (may break some stuff) (y/n)") -eq "y"
