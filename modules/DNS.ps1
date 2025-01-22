@@ -93,7 +93,7 @@ $keys = Get-ItemProperty "HKLM://SYSTEM\CurrentControlSet\Services\DNS\Parameter
 
 if($keys.ServerLevelPluginDll) {
     Write-Output "ServerLevelPluginDll Key Found; Value = $($keys.ServerLevelPluginDll)"
-    $shouldDelete = (Read-Host "Delete? (should prob unless specified by README) (y/n)") -eq "y"
+    $shouldDelete = (Read-Host "Delete? (should prob) (y/n)") -eq "y"
     if($shouldDelete) {
         reg delete "HKLM\SYSTEM\CurrentControlSet\Services\DNS\Parameters" /v ServerLevelPluginDll /f | Out-Null
     }

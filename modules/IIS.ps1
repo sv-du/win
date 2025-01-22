@@ -8,6 +8,21 @@ if ((Get-WindowsFeature Web-Server).InstallState -eq "Installed") {
         Set-ItemProperty -Path $tempPath -Name processModel.identityType -Value "ApplicationPoolIdentity"
     }
 
+    # Set anonymous authentication credentials for all app pools
+    Get-ChildItem "IIS:\AppPools" -Force | ForEach-Object {
+        Set-ItemProperty -Path "IIS:\AppPools\$($_.Name)" -Name passAnonymousToken -Value True
+    }
+
+    # Give all sites a unique application pool
+    Get-ChildItem -Path "IIS:\Sites" -Force | ForEach-Object {
+        if($_.Name -eq "Default Web Site") {
+            Set-ItemProperty -Path "IIS:\Sites\$($_.Name)" -Name applicationPool -Value "DefaultAppPool"
+        } else {
+            if(!(Get-IISAppPool "$($_.Name)") | Out-Null) { New-WebAppPool "$($_.Name)" -Force | Out-Null }
+            Set-ItemProperty -Path "IIS:\Sites\$($_.Name)" -Name applicationPool -Value "$($_.Name)" -Force
+        }
+    }
+
     # Disable directory browsing for all sites
     Set-WebConfigurationProperty -Filter system.webserver/directorybrowse -PSPath IIS:\ -Name Enabled -Value False
 
@@ -30,7 +45,9 @@ if ((Get-WindowsFeature Web-Server).InstallState -eq "Installed") {
     Get-ChildItem -Path $sysDrive -Include *.* -File -Recurse | ForEach-Object { $_.Delete() }
 }
 
-# Set various web application and site security settings
+# Disable insecure feature
+Remove-WindowsFeature Web-DAV-Publishing
+
 # Ensure forms authentication requires SSL
 Add-WebConfigurationProperty -Filter "/system.webServer/security/authentication/forms" -Name "requireSSL" -Value $true
 
@@ -85,6 +102,9 @@ Set-WebConfigurationProperty -Filter "/system.webServer/handlers/*" -Name "permi
 Add-WebConfigurationProperty -Filter "/system.webServer/isapiCgiRestriction" -Name "notListedIsapisAllowed" -Value "False"
 Add-WebConfigurationProperty -Filter "/system.webServer/isapiCgiRestriction" -Name "notListedCgisAllowed" -Value "False"
 Set-WebConfigurationProperty -Filter "/system.webServer/security/dynamicIpSecurity" -Name "enabled" -Value "True"
+
+Remove-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -filter 'system.webServer/security/authorization' -name '.' -AtElement @{users='*';roles='';verbs=''}
+Add-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -filter 'system.webServer/security/authorization' -name '.' -value @{accessType='Allow';roles='Administrators'}
 
 Add-Item -ItemType Directory -Path "C:\NewIISLogLocation"
 Add-WebConfigurationProperty -Filter "/system.applicationHost/sites/siteDefaults/logFile" -Name "directory" -Value "C:\NewIISLogLocation"
