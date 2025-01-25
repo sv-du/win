@@ -53,22 +53,22 @@ $lists = @{
         "finding_list_cis_microsoft_windows_11_enterprise_22h2_user.csv"
     )
     "19" = @(
-        "finding_list_cis_microsoft_windows_server_2019_1809_2.0.0_machine.csv",
-        "finding_list_cis_microsoft_windows_server_2019_1809_2.0.0_user.csv"
+        "finding_list_cis_microsoft_windows_server_2019_1809_3.0.0_machine.csv",
+        "finding_list_cis_microsoft_windows_server_2019_1809_3.0.0_user.csv"
     )
     "19-AD" = @(
-        "finding_list_cis_microsoft_windows_server_2019_1809_2.0.0_machine.csv",
-        "finding_list_cis_microsoft_windows_server_2019_1809_2.0.0_user.csv",
+        "finding_list_cis_microsoft_windows_server_2019_1809_3.0.0_machine.csv",
+        "finding_list_cis_microsoft_windows_server_2019_1809_3.0.0_user.csv",
         "finding_list_dod_microsoft_windows_server_2019_dc_stig_v2r1_machine.csv",
         "finding_list_dod_microsoft_windows_server_2019_dc_stig_v2r1_user.csv"
     )
     "22" = @(
-        "finding_list_cis_microsoft_windows_server_2022_22h2_2.0.0_machine.csv"
-        "finding_list_cis_microsoft_windows_server_2022_22h2_2.0.0_user.csv"
+        "finding_list_cis_microsoft_windows_server_2022_22h2_3.0.0_machine.csv"
+        "finding_list_cis_microsoft_windows_server_2022_22h2_3.0.0_user.csv"
     )
     "22-AD" = @(
-        "finding_list_cis_microsoft_windows_server_2022_22h2_2.0.0_machine.csv"
-        "finding_list_cis_microsoft_windows_server_2022_22h2_2.0.0_user.csv"
+        "finding_list_cis_microsoft_windows_server_2022_22h2_3.0.0_machine.csv"
+        "finding_list_cis_microsoft_windows_server_2022_22h2_3.0.0_user.csv"
     )
 }
 
