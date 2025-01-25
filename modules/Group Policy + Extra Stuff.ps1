@@ -84,7 +84,7 @@ if($isADInstalled) {
     Write-Output "Check GPO permissions manually (gpmc.msc > Domains > <domain name> > Group Policy Objects > <gp name> > Delegation > Right Click Entry)"
 }
 
-$cleanGPO = (Read-Host "Nuke the GPO? (may break some stuff) (y/n)") -eq "y"
+$cleanGPO = (Read-Host "Remove GPO files? (may break some stuff) (y/n)") -eq "y"
 
 if($cleanGPO) {
     Remove-Item -Recurse -Force "$env:WinDir\System32\GroupPolicy" | Out-Null
@@ -111,6 +111,11 @@ if($isADInstalled) {
     Write-Output "Maximum tolerance for computer clock synchronization: 5 minutes"
 }
 pause
+
+$disableSignedElevation = (Read-Host "Do you want to disable that only signed executables can run (fixes script elevation)? (y/n)") -eq "y"
+if($disableSignedElevation) {
+    reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v ValidateAdminCodeSignatures /t REG_DWORD /d 0 /f
+}
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Creating non-default PS drives for registry" -ForegroundColor white
 
