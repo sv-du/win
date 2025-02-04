@@ -727,6 +727,98 @@ reg add "HKLM\Software\Policies\Google\Update" /v "AutoUpdateCheckPeriodMinutes"
 reg add "HKLM\Software\Policies\Google\Chrome\Recommended" /v "SafeBrowsingProtectionLevel" /t REG_DWORD /d "2" /f
 reg add "HKLM\Software\Policies\Google\Chrome\Recommended" /v "SyncDisabled" /t REG_DWORD /d "1" /f
 
+function Set-RegistryValue {
+    param (
+        [string]$Path,
+        [string]$Name,
+        [object]$Value,
+        [string]$Type = 'String'  # Default as string
+    )
+    # Convert string to RegistryValueKind enum if needed
+    $enumValueType = [Microsoft.Win32.RegistryValueKind]::$Type
+    # Check if the registry path exists
+    if (-not (Test-Path -LiteralPath $Path)) {
+        # Create the registry key if it does not exist
+        New-Item -Path $Path -Force | Out-Null
+    }
+    # Set the item property
+    Set-ItemProperty -Path $Path -Name $Name -Value $Value -Type $enumValueType
+}
+
+Set-RegistryValue -Path "HKLM:\SOFTWARE\Policies\Google\Chrome" -Name "SafeBrowsingAllowlistDomains" -Value "0" -Type String
+Set-RegistryValue -Path "HKLM:\SOFTWARE\Policies\Google\Chrome" -Name "SafeBrowsingProtectionLevel" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "MediaRouterCastAllowAllIPs" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "BrowserNetworkTimeQueriesEnabled" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "SafeSitesFilterBehavior" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "ChromeVariations" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "DNSInterceptionChecksEnabled" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "ComponentUpdatesEnabled" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "GloballyScopeHTTPAuthCacheEnabled" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "CommandLineFlagSecurityWarningsEnabled" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "ThirdPartyBlockingEnabled" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "EnterpriseHardwarePlatformAPIEnabled" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "ForceEphemeralProfiles" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "ImportHomepage" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "ImportSearchEngine" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "HSTSPolicyBypassList" -Value "0" -Type String
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "OverrideSecurityRestrictionsOnInsecureOrigin" -Value 0 -Type String
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "SuppressUnsupportedOSWarning" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Update" -Name "Update{8A69D345-D564-463C-AFF1-A69D9E530F96}" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "DefaultInsecureContentSetting" -Value 2 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "DefaultWebBluetoothGuardSetting" -Value 2 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "DefaultNotificationsSetting" -Value 2 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "BlockExternalExtensions" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "ExtensionAllowedTypes" -Value "extension, hosted_app, platform_app, theme" -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "ExtensionInstallBlocklist" -Value "*" -Type String
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "DefaultThirdPartyStoragePartitioningSetting" -Value 2 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "ExtensionManifestV2Availability" -Value 3 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "ExtensionUnpublishedAvailability" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "AuthSchemes" -Value "ntlm, negotiate" -Type String
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "NativeMessagingBlocklist" -Value "*" -Type String
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "PasswordManagerEnabled" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "RemoteAccessHostAllowRemoteAccessConnections" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "RemoteAccessHostAllowUiAccessForRemoteAssistance" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "RemoteAccessHostRequireCurtain" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "RemoteAccessHostAllowClientPairing" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "RemoteAccessHostAllowRelayedConnection" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "FirstPartySetsEnabled" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "CloudAPAuthEnabled" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "DisableSafeBrowsingProceedAnyway" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "ForceGoogleSafeSearch" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "RelaunchNotification" -Value 2 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "RequireOnlineRevocationChecksForLocalAnchors" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "RelaunchNotificationPeriod" -Value 86400000 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "AllowWebAuthnWithBrokenTlsCerts" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "DomainReliabilityAllowed" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "EncryptedClientHelloEnabled" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "EnforceLocalAnchorConstraintsEnabled" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "EnterpriseProfileCreationKeepBrowsingData" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "GoogleSearchSidePanelEnabled" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "HttpsUpgradesEnabled" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "InsecureHashesInTLSHandshakesEnabled" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "RendererAppContainerEnabled" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "StrictMimetypeCheckForWorkerScriptsEnabled" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "RemoteDebuggingAllowed" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "DefaultCookiesSetting" -Value 4 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "PaymentMethodQueryEnabled" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "BlockThirdPartyCookies" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "BrowserSignin" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "SyncDisabled" -Value 1 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "AlternateErrorPagesEnabled" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "SpellCheckServiceEnabled" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "SafeBrowsingForTrustedSourcesEnabled" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "TranslateEnabled" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "DefaultSerialGuardSetting" -Value 2 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "DefaultSensorsSetting" -Value 2 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "DefaultClipboardSetting" -Value 2 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "DefaultWindowManagementSetting" -Value 2 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "AllowFileSelectionDialogs" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "UserFeedbackAllowed" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "AutofillAddressEnabled" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "AutofillCreditCardEnabled" -Value 0 -Type DWord
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome\SyncTypesListDisabled" -Name "1" -Value "passwords" -Type String
+Set-RegistryValue -Path "HKLM:\Software\Policies\Google\Chrome" -Name "DiskCacheSize" -Value 250609664 -Type DWord
+
 reg delete "HKLM\SOFTWARE\Policies\Microsoft\Windows Advanced Threat Protection" /f
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" /v "DisableCompression" /t REG_DWORD /d "1" /f
 Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
@@ -1791,7 +1883,6 @@ if($timePersistenceDetected) { pause }
 reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\W32Time\TimeProviders\NtpClient" /v DllName /t REG_EXPAND_SZ /d "C:\Windows\System32\w32time.dll" /f | Out-Null
 reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\W32Time\TimeProviders\NtpServer" /v DllName /t REG_EXPAND_SZ /d "C:\Windows\System32\w32time.dll" /f | Out-Null
 reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\W32Time\TimeProviders\VMICTimeProvider" /v DllName /t REG_EXPAND_SZ /d "C:\Windows\System32\vmictimeprovider.dll" /f | Out-Null
-
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Detect Powershell Profile persistence" -ForegroundColor white
 
