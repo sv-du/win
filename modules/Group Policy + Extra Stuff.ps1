@@ -1827,7 +1827,7 @@ arp -d *
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Set OpenSSH shell to Command Prompt" -ForegroundColor white
 
-New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\cmd.exe" -PropertyType String -Force
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\OpenSSH"" /v DefaultShell /t REG_SZ /d "C:\Windows\System32\cmd.exe" /f
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Delete RDP Bitmap Cache" -ForegroundColor white
 
