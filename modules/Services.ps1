@@ -356,5 +356,8 @@ Write-Output "Fetching unqouted image paths"
 cmd /c 'wmic service get name,pathname | findstr /i /v """'
 
 Write-Output "Fetching hidden services"
+$goodServices = @('WUDFRd', 'WUDFWpdFs', 'WUDFWpdMtp')
 
-Compare-Object -ReferenceObject (Get-Service | Select-Object -ExpandProperty Name | % { $_ -replace "_[0-9a-f]{2,8}$" } ) -DifferenceObject (Get-ChildItem -path hklm:\system\currentcontrolset\services | % { $_.Name -Replace "HKEY_LOCAL_MACHINE\\","HKLM:\" } | Where-Object { Get-ItemProperty -Path "$_" -name objectname -erroraction 'ignore' } | % { $_.substring(40) }) -PassThru | Where-Object {$_.sideIndicator -eq "=>"}
+Compare-Object -ReferenceObject (Get-Service | Select-Object -ExpandProperty Name | % { $_ -replace "_[0-9a-f]{2,8}$" }) -DifferenceObject (gci -path hklm:\system\currentcontrolset\services | % { $_.Name -Replace "HKEY_LOCAL_MACHINE\\","HKLM:\" } | ? { Get-ItemProperty -Path "$_" -name objectname -erroraction 'ignore' } | % { $_.substring(40) }) -PassThru | 
+    Where-Object { $_.sideIndicator -eq "=>" -and $goodServices -notcontains $_.InputObject } |
+    Select-Object InputObject
