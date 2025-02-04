@@ -1839,3 +1839,25 @@ Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -Foregrou
 
 reg add "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Setup\RecoveryConsole" /v SecurityLevel /t REG_DWORD /d 0 /f
 
+# Reset permissions for Eventvwr.exe
+takeown /f "C:\Windows\System32\Eventvwr.exe"
+icacls "C:\Windows\System32\Eventvwr.exe" /reset
+icacls "C:\Windows\System32\Eventvwr.exe" /inheritancelevel:r
+icacls "C:\Windows\System32\Eventvwr.exe" /grant "NT SERVICE\TrustedInstaller:F" "Administrators:(RX)" "System:(RX)" "Users:(RX)" "ALL APPLICATION PACKAGES:(RX)" "ALL RESTRICTED APPLICATION PACKAGES:(RX)"
+
+# Reset permissions for the .evtx logs
+takeown /f "C:\Windows\System32\winevt\Logs\Application.evtx"
+icacls "C:\Windows\System32\winevt\Logs\Application.evtx" /reset
+icacls "C:\Windows\System32\winevt\Logs\Application.evtx" /inheritancelevel:r
+icacls "C:\Windows\System32\winevt\Logs\Application.evtx" /grant "NT SERVICE\EventLog:F" "System:F" "Administrators:F"
+
+takeown /f "C:\Windows\System32\winevt\Logs\Security.evtx"
+icacls "C:\Windows\System32\winevt\Logs\Security.evtx" /reset
+icacls "C:\Windows\System32\winevt\Logs\Security.evtx" /inheritancelevel:r
+icacls "C:\Windows\System32\winevt\Logs\Security.evtx" /grant "NT SERVICE\EventLog:F" "System:F" "Administrators:F"
+
+takeown /f "C:\Windows\System32\winevt\Logs\System.evtx"
+icacls "C:\Windows\System32\winevt\Logs\System.evtx" /reset
+icacls "C:\Windows\System32\winevt\Logs\System.evtx" /inheritancelevel:r
+icacls "C:\Windows\System32\winevt\Logs\System.evtx" /grant "NT SERVICE\EventLog:F" "System:F" "Administrators:F"
+
