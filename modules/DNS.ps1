@@ -72,7 +72,7 @@ dnscmd /config /roundrobin 1
 dnscmd /config /retrieveroottrustanchors
 
 dnscmd /config /scavenginginterval 0x2
-dnscmd /config /secureresponses 0
+dnscmd /config /secureresponses 1
 dnscmd /config /sendport 0x0
 dnscmd /config /strictfileparsing 1
 
