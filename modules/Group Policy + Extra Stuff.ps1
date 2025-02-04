@@ -1234,7 +1234,7 @@ Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -Foregrou
 
 Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL' -Name 'KeyLogging' -Value '0'
 
-bcdedit /set disableelamdrivers yes
+bcdedit /set disableelamdrivers no
 bcdedit /set testsigning off
 bcdedit /bootdebug off
 bcdedit /debug off
