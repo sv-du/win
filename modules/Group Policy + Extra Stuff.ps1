@@ -1827,7 +1827,7 @@ arp -d *
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Set OpenSSH shell to Command Prompt" -ForegroundColor white
 
-New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\cmd.exe" -PropertyType String -Force
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\OpenSSH" /v DefaultShell /t REG_SZ /d "C:\Windows\System32\cmd.exe" /f
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Delete RDP Bitmap Cache" -ForegroundColor white
 
@@ -1841,3 +1841,27 @@ Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -Foregrou
 
 reg add "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Setup\RecoveryConsole" /v SecurityLevel /t REG_DWORD /d 0 /f
 
+Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Reset Event Viewer ACLs" -ForegroundColor white
+
+icacls.exe "C:\Windows\System32\eventvwr.exe" /setowner "NT SERVICE\TrustedInstaller" | Out-Null
+icacls.exe "C:\Windows\System32\eventvwr.exe" /grant:r "ALL APPLICATION PACKAGES:(RX)" "ALL RESTRICTED APPLICATION PACKAGES:(RX)" "System:(RX)" "Administrators:(RX)" "Users:(RX)" "NT SERVICE\TrustedInstaller:F" | Out-Null
+icacls.exe "C:\Windows\System32\eventvwr.exe" /inheritancelevel:r | Out-Null
+
+icacls.exe "C:\Windows\System32\eventvwr.msc" /setowner "NT SERVICE\TrustedInstaller" | Out-Null
+icacls.exe "C:\Windows\System32\eventvwr.msc" /grant:r "ALL APPLICATION PACKAGES:(RX)" "ALL RESTRICTED APPLICATION PACKAGES:(RX)" "System:(RX)" "Administrators:(RX)" "Users:(RX)" "NT SERVICE\TrustedInstaller:F" | Out-Null
+icacls.exe "C:\Windows\System32\eventvwr.msc" /inheritancelevel:r | Out-Null
+
+icacls.exe "C:\Windows\System32\winevt\Logs" /setowner "SYSTEM"
+$folderACL = Get-Acl -Path "C:\Windows\System32\winevt\Logs"
+$folderACL.SetSecurityDescriptorSddlForm("O:SYG:SYD:PAI(A;CI;FR;;;AU)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;S-1-5-80-880578595-1860270145-482643319-2788375705-1540778122)")
+$folderACL.SetAccessRuleProtection($true, $false) # Disables any inheritance
+
+Set-Acl -Path "C:\Windows\System32\winevt\Logs" -AclObject $folderACL
+
+Get-ChildItem "C:\Windows\System32\winevt\Logs" -Force | ForEach-Object {
+    $acl = (Get-Acl -Path "$($_.FullName)")
+    $acl.SetOwner((New-Object System.Security.Principal.NTAccount("LOCAL SERVICE")))
+    $acl.SetAccessRuleProtection($false, $false) # Allows any inheritance (shits tweaking and adds everyone perms to the object :sob:), set perms below just to be safe
+    $acl.SetSecurityDescriptorSddlForm("O:LSG:LSD:AI(A;ID;FA;;;S-1-5-80-880578595-1860270145-482643319-2788375705-1540778122)(A;ID;FA;;;SY)(A;ID;FA;;;BA)")
+    Set-Acl -Path "$($_.FullName)" -AclObject $acl
+}
