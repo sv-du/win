@@ -353,7 +353,12 @@ foreach($service in $services) {
 
 Write-Output "Fetching unqouted image paths"
 
-cmd /c 'wmic service get name,pathname | findstr /i /v """'
+Get-WmiObject -class Win32_Service -Property Name,PathName | Where-Object {
+    $_.PathName -ne $null -and # If a binary exists for the service (no binary = no vuln)
+    $_.PathName -notlike "C:\Windows\System32\svchost.exe*" -and # Exclude svchost as this is all false positives
+    $_.PathName -notlike '"*' -and # The string check to see if the path doesn't begin with a ", and if so, we can assume the path is not quoted
+    $_.PathName.contains(" ") # This vuln only affects paths that have spaces
+} | Select-Object Name,PathName
 
 Write-Output "Fetching hidden services"
 
