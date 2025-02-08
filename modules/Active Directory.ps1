@@ -476,6 +476,8 @@ Get-ADComputer -Filter * -Properties * | ForEach-Object {
 Write-Output "It's possible that fake computer accounts can still exist and they had an operating system manually defined. Check dsa.msc > Computers and investigate any if they aren't supposed to be there"
 pause
 
+Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Checking insecure GPO permissions" -ForegroundColor white
+
 Get-GPO -All | ForEach-Object {
     Get-GPPermissions "$($_.DisplayName)" -All | ForEach-Object {
         if($_.Trustee.Name -eq "Authenticated Users") {
@@ -483,3 +485,11 @@ Get-GPO -All | ForEach-Object {
         }
     }
 }
+
+Write-Output "It's possible that this could fail to detect something. Check manually to be safe"
+pause
+
+Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Require DC authentication" -ForegroundColor white
+
+reg add "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" /v "ForceUnlockLogon" /t REG_DWORD /d 1 /f
+
