@@ -201,43 +201,14 @@ $enabledServices = @(
     "winmgmt"
 )
 
+$fileName = GetBaselineFileName
 $isCreatingBaseline = (Read-Host "Are you generating a service baseline? (y/n)").ToLower() -eq "y"
 
 if($isCreatingBaseline) {
-    $fileName = $null
-    $version = Read-Host "What version of Windows are you running? (10, 11, 19, 22)"
-    while(!@("10", "11", "19", "22").Contains($version)) {
-        $version = Read-Host "What version of Windows are you running? (10, 11, 19, 22)"
-    }
-    if($version -eq "10" -or $version -eq "11") {
-        $fileName = $version + ".txt"
-    } else {
-        $isADInstalled = (Read-Host "Do you have AD installed? (y/n)").ToLower() -eq "y"
-        if($isADInstalled) {
-            $fileName = $version + "-AD.txt"
-        } else {
-            $fileName = $version + ".txt"
-        }
-    }
     $services = getAllServices
-    (ConvertTo-Json $services) > ".\baselines\services\$fileName"
+    (ConvertTo-Json $services) > ".\baselines\services\$fileName.txt"
     Write-Output "Baseline has been generated"
     exit
-}
-
-$version = Read-Host "What version of Windows are you running? (10, 11, 19, 22)"
-while(!@("10", "11", "19", "22").Contains($version)) {
-    $version = Read-Host "What version of Windows are you running? (10, 11, 19, 22)"
-}
-if($version -eq "10" -or $version -eq "11") {
-    $fileName = $version
-} else {
-    $isADInstalled = (Read-Host "Do you have AD installed? (y/n)").ToLower() -eq "y"
-    if($isADInstalled) {
-        $fileName = $version + "-AD"
-    } else {
-        $fileName = $version
-    }
 }
 
 Write-Output "Fetching baseline"
@@ -334,7 +305,7 @@ foreach($service in $enabledServices) { # Double pass in order to start services
     }
 }
 
-$isADInstalled = (Read-Host "Do you have AD installed? (y/n)").ToLower() -eq "y"
+$isADInstalled = (GetSettings).ADInstalled
 
 if($isADInstalled) {
     foreach($service in $adServices) {

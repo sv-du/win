@@ -39,7 +39,7 @@ clear
 
 $password = "k97(0HaZ8~9^QMcxsg15rX-z"
 
-$currentUser = Get-Content .\CURRENT_USER.txt
+$currentUser = (GetSettings).CurrentUser
 
 while(!(Test-Path .\UserData.txt)) {
     clear

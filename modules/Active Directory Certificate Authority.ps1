@@ -1,3 +1,10 @@
+Import-Module .\api.ps1
+
+if(!((GetSettings).ADInstalled)) {
+    Write-Output "This is an active directory specific module"
+    exit
+}
+
 Add-WindowsFeature Adcs-Cert-Authority -IncludeManagementTools
 Install-AdcsCertificationAuthority -CAtype EnterpriseRootCA
 

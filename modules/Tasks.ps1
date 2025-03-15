@@ -1,3 +1,5 @@
+Import-Module .\api.ps1
+
 function getTaskFiles([string]$path, [System.Collections.ArrayList]$list) {
     if(!$path) { $path = "C:\Windows\System32\Tasks" }
     if(!$list) { $list = [System.Collections.ArrayList]::new() }
@@ -42,26 +44,11 @@ function getAllTasks() {
     return $parsedTasks
 }
 
-#$isCreatingBaseline = (Read-Host "Are you generating a task baseline? (y/n)").ToLower() -eq "y"
+$fileName = GetBaselineFileName
+#$isCreatingBaseline = (Read-Host "Are you generating a task baseline? (y/n)").ToLower() -eq "y" -> Commented rn b/c no task baseline mech added yet
 
 if($isCreatingBaseline) {
-    $fileName = $null
-    $version = Read-Host "What version of Windows are you running? (10, 11, 19, 22)"
-    while(!@("10", "11", "19", "22").Contains($version)) {
-        $version = Read-Host "What version of Windows are you running? (10, 11, 19, 22)"
-    }
-    if($version -eq "10" -or $version -eq "11") {
-        $fileName = $version + ".txt"
-    } else {
-        $isADInstalled = (Read-Host "Do you have AD installed? (y/n)").ToLower() -eq "y"
-        if($isADInstalled) {
-            $fileName = $version + "-AD.txt"
-        } else {
-            $fileName = $version + ".txt"
-        }
-    }
-    $tasks = getAllTasks
-    (ConvertTo-Json $tasks) > ".\baselines\tasks\$fileName"
+    (ConvertTo-Json $tasks) > ".\baselines\tasks\$fileName.txt"
     Write-Output "Baseline has been generated"
     exit
 }

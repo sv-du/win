@@ -1,3 +1,5 @@
+Import-Module .\api.ps1
+
 if(($PSVersionTable.PSVersion | Select-Object -ExpandProperty Major) -lt 3){
     Write-Output "The current Powershell version does not support PSScriptRoot, stopping..."
     exit
@@ -15,9 +17,11 @@ Set-MpPreference -AttackSurfaceReductionOnlyExclusions ($PSScriptRoot)
 
 cmd /c color # Make colored printing work
 
-if(!(Test-Path .\CURRENT_USER.txt)) {
+if(!(Test-Path .\settings.json)) {
     $args[0] | Out-File -FilePath .\CURRENT_USER.txt
 }
+
+GetSettings
 
 $modulePath = $PSScriptRoot + "\modules"
 $modules = @(Get-ChildItem -Path $modulePath -Filter *.ps1)

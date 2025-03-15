@@ -1,3 +1,12 @@
+Import-Module .\api.ps1
+
+$version = (GetSettings).Version
+
+if($version -eq "10" -or $version -eq "11") {
+    Write-Output "This is a server only module"
+    exit
+}
+
 $models = Get-BpaModel
 $successModels = [System.Collections.ArrayList]::new()
 

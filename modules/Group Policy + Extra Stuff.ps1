@@ -1,3 +1,5 @@
+Import-Module .\api.ps1
+
 function downloadHardeningKitty() {
     if(Test-Path .\tools\HardeningKitty) { Remove-Item .\tools\HardeningKitty\ -Recurse }
     $link = ((Invoke-WebRequest "https://api.github.com/repos/scipag/HardeningKitty/releases/latest" -UseBasicParsing) | ConvertFrom-Json).zipball_url
@@ -18,20 +20,13 @@ Import-Module .\tools\HardeningKitty\HardeningKitty.psm1
 
 clear
 
-$version = Read-Host "What version of Windows are you running? (10, 11, 19, 22)"
-$isADInstalled = $false
-
-while(!@("10", "11", "19", "22").Contains($version)) {
-    $version = Read-Host "What version of Windows are you running? (10, 11, 19, 22)"
-}
+$version = (GetSettings).Version
+$isADInstalled = (GetSettings).ADInstalled
 
 $name = $version
 
-if($version -eq "19" -or $version -eq "22") {
-    $isADInstalled = (Read-Host "Do you have AD installed? (y/n)").ToLower() -eq "y"
-    if($isADInstalled) {
-        $name += "-AD"
-    }
+if($isADInstalled) {
+    $name += "-AD"
 }
 
 $lists = @{
@@ -119,20 +114,7 @@ if($disableSignedElevation) {
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Creating non-default PS drives for registry" -ForegroundColor white
 
-$CURRENT_USER_SID = ("" + (cmd /c ('wmic useraccount where name="{0}" get sid' -f (Get-Content .\CURRENT_USER.txt)))[2]).Trim()
-
-if(!$CURRENT_USER_SID -or !$CURRENT_USER_SID.StartsWith("S-")) {
-    Write-Host "FAILED TO GET CURRENT USER SID" -ForegroundColor Red
-    Write-Host "Run the following command in COMMAND PROMPT" -ForegroundColor Yellow
-    Write-Host ('wmic useraccount where name="{0}" get sid' -f (Get-Content .\CURRENT_USER.txt)) -ForegroundColor Yellow
-    $CURRENT_USER_SID = (Read-Host "Enter the SID returned by the above command").Trim()
-} else {
-    Write-Host "CURRENT USER SID FOUND: $CURRENT_USER_SID" -ForegroundColor Green
-    pause
-}
-
-# We are running on the SYSTEM account ; Remap PS HKCU drive to our old user drive
-Remove-PSDrive -Name HKCU
+Remove-PSDrive -Name HKCU # We are running on the SYSTEM account ; Remap PS HKCU drive to our old user drive
 New-PSDrive -Name HKCU -PSProvider Registry -Root "HKEY_USERS\$CURRENT_USER_SID"
 
 New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT
@@ -160,9 +142,9 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-T
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v AllowTSConnections /t REG_DWORD /d 0 /f | Out-Null
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fAllowToGetHelp /t REG_DWORD /d 0 /f | Out-Null
 reg add "HKLM\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v MinEncryptionLevel /t REG_DWORD /d 3 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\Windows NT\Terminal Services" /v "AllowSignedFiles" /t REG_DWORD /d 1 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\Windows NT\Terminal Services" /v "AllowUnsignedFiles" /t REG_DWORD /d 0 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\Windows NT\Terminal Services" /v "DisablePasswordSaving" /t REG_DWORD /d 1 /f | Out-Null
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\Windows NT\Terminal Services" -ValueName "AllowSignedFiles" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\Windows NT\Terminal Services" -ValueName "AllowUnsignedFiles" -Type DWord -Data 0
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\Windows NT\Terminal Services" -ValueName "DisablePasswordSaving" -Type DWord -Data 1
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Conferencing" /v "NoRDS" /t REG_DWORD /d 1 /f | Out-Null
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\WinRS" /v "AllowRemoteShellAccess" /t REG_DWORD /d 0 /f | Out-Null
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v "AllowSignedFiles" /t REG_DWORD /d 1 /f | Out-Null
@@ -182,9 +164,9 @@ reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Serv
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v "DisableShadowConsent" /t REG_DWORD /d 0 /f | Out-Null
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v "fDisableCcm" /t REG_DWORD /d 1 /f | Out-Null
 reg add "HKLM\SYSTЕM\CurrеntControlSеt\Control\Tеrminal Sеrvеr" /v "AllowRemotеRPC" /t REG_DWORD /d 0 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v fInheritInitialProgram /t REG_DWORD /d 0 /f | Out-Null
-reg delete "HKU\$CURRENT_USER_SID\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v InitialProgram /f | Out-Null
-reg delete "HKU\$CURRENT_USER_SID\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v WorkDirectory /f | Out-Null
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\Windows NT\Terminal Services" -ValueName "fInheritInitialProgram" -Type DWord -Data 0
+DeleteUsersRegistryValue -Path "HKCU\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" -ValueName "InitialProgram"
+DeleteUsersRegistryValue -Path "HKCU\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" -ValueName "WorkDirectory"
 
 $enableRDP = (Read-Host "Enable RDP? (y/n)") -eq "y"
 
@@ -203,10 +185,9 @@ reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Updat
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DisableWindowsUpdateAccess /t REG_DWORD /d 0 /f | Out-Null
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v ElevateNonAdmins /t REG_DWORD /d 0 /f | Out-Null
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DisableWUfBSafeguard /t REG_DWORD /d 0 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoWindowsUpdate /t REG_DWORD /d 0 /f | Out-Null
+AddUsersRegistryValue -Path "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -ValueName "NoWindowsUpdate" -Type DWord -Data 0
 reg add "HKLM\SYSTEM\Internet Communication Management\Internet Communication" /v DisableWindowsUpdateAccess /t REG_DWORD /d 0 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\WindowsUpdate" /v DisableWindowsUpdateAccess /t REG_DWORD /d 0 /f | Out-Null
-
+AddUsersRegistryValue -Path "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\WindowsUpdate" -ValueName "DisableWindowsUpdateAccess" -Type DWord -Data 0
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Restrict CD ROM drive" -ForegroundColor white
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AllocateCDRoms /t REG_DWORD /d 1 /f | Out-Null
@@ -269,30 +250,31 @@ reg ADD HKLM\SYSTEM\CurrentControlSet\services\LanmanServer\Parameters /v NullSe
 reg ADD HKLM\SYSTEM\CurrentControlSet\services\LanmanWorkstation\Parameters /v EnablePlainTextPassword /t REG_DWORD /d 0 /f
 reg ADD HKLM\SYSTEM\CurrentControlSet\Control\SecurePipeServers\winreg\AllowedExactPaths /v Machine /t REG_MULTI_SZ /d "" /f
 reg ADD HKLM\SYSTEM\CurrentControlSet\Control\SecurePipeServers\winreg\AllowedPaths /v Machine /t REG_MULTI_SZ /d "" /f
-reg ADD "HKU\$CURRENT_USER_SID\Software\Microsoft\Internet Explorer\PhishingFilter" /v EnabledV8 /t REG_DWORD /d 1 /f
-reg ADD "HKU\$CURRENT_USER_SID\Software\Microsoft\Internet Explorer\PhishingFilter" /v EnabledV9 /t REG_DWORD /d 1 /f
-reg ADD "HKU\$CURRENT_USER_SID\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v DisablePasswordCaching /t REG_DWORD /d 1 /f
-reg ADD "HKU\$CURRENT_USER_SID\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v WarnonBadCertRecving /t REG_DWORD /d 1 /f
-reg ADD "HKU\$CURRENT_USER_SID\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v WarnOnPostRedirect /t REG_DWORD /d 1 /f
-reg ADD "HKU\$CURRENT_USER_SID\Software\Microsoft\Internet Explorer\Main" /v DoNotTrack /t REG_DWORD /d 1 /f
-reg ADD "HKU\$CURRENT_USER_SID\Software\Microsoft\Internet Explorer\Download" /v RunInvalidSignatures /t REG_DWORD /d 1 /f
-reg ADD "HKU\$CURRENT_USER_SID\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_LOCALMACHINE_LOCKDOWN\Settings" /v LOCALMACHINE_CD_UNLOCK /t REG_DWORD /d 1 /f
-reg ADD "HKU\$CURRENT_USER_SID\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v WarnonZoneCrossing /t REG_DWORD /d 1 /f
-reg ADD "HKU\$CURRENT_USER_SID\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v Hidden /t REG_DWORD /d 1 /f
-reg ADD "HKU\$CURRENT_USER_SID\.DEFAULT\Control Panel\Accessibility\StickyKeys" /v Flags /t REG_SZ /d 506 /f
-reg ADD "HKU\$CURRENT_USER_SID\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v ShowSuperHidden /t REG_DWORD /d 1 /f
-reg ADD "HKLM\SYSTEM\CurrentControlSet\Control\CrashControl" /v CrashDumpEnabled /t REG_DWORD /d 0 /f
-reg ADD "HKU\$CURRENT_USER_SID\SYSTEM\CurrentControlSet\Services\CDROM" /v AutoRun /t REG_DWORD /d 1 /f
+reg ADD "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\cdrom" /v AutoRun /t REG_DWORD /d 1 /f
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Internet Explorer\PhishingFilter" -ValueName "EnabledV8" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Internet Explorer\PhishingFilter" -ValueName "EnabledV9" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" -ValueName "DisablePasswordCaching" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" -ValueName "WarnonBadCertRecving" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" -ValueName "WarnOnPostRedirect" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" -ValueName "WarnonZoneCrossing" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Internet Explorer\Main" -ValueName "DoNotTrack" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Internet Explorer\Download" -ValueName "RunInvalidSignatures" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_LOCALMACHINE_LOCKDOWN\Settings" -ValueName "LOCALMACHINE_CD_UNLOCK" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -ValueName "Hidden" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -ValueName "ShowSuperHidden" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Control Panel\Accessibility\StickyKeys" -ValueName "Flags" -Type String -Data "506"
+
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v "NoAutorun" /t REG_DWORD /d 1 /f
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v "NoDriveTypeAutoRun" /t REG_DWORD /d 255 /f
+reg ADD "HKLM\SYSTEM\CurrentControlSet\Control\CrashControl" /v CrashDumpEnabled /t REG_DWORD /d 0 /f
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] IE Hardening" -ForegroundColor white
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap" /v IEHarden /t REG_DWORD /d 1 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Microsoft\Windows\CurrentVersion\Internet Settings" /v lEHardenlENoWarn /t REG_DWORD /d 1 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\Internet Explorer\PhishingFilter" /v "EnabledV9" /t REG_DWORD /d 1 /f
+AddUsersRegistryValue -Path "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings\ZoneMap" -ValueName "IEHarden" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings" -ValueName "lEHardenlENoWarn" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\Internet Explorer\PhishingFilter" -ValueName "EnabledV9" -Type DWord -Data 1
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Internet Explorer\PhishingFilter" /v "EnabledV9" /t REG_DWORD /d 1 /f
 reg add "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\CurrentVersion\Internet Settings" /v SecureProtocols /t REG_DWORD /d 2048 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\Windows\CurrentVersion\Internet Settings" /v SecureProtocols /t REG_DWORD /d 2048 /f
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\Windows\CurrentVersion\Internet Settings" -ValueName "SecureProtocols" -Type DWord -Data 2048
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Internet Explorer\Main" /v "DEPOff" /t REG_DWORD /d 0 /f
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Internet Explorer\Main" /v "Isolation64Bit" /t REG_DWORD /d 1 /f
 reg add "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Internet Explorer\Main" /v Isolation /t REG_SZ /d "PMEM" /f
@@ -305,26 +287,26 @@ reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\I
 reg add "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\CurrentVersion\Internet Settings\Lockdown_Zones\3" /v "1201" /t REG_DWORD /d 3 /f
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Block Macros and Other Content Execution" -ForegroundColor white
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\access\security" /v "vbawarnings" /t REG_DWORD /d 4 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\excel\security" /v "vbawarnings" /t REG_DWORD /d 4 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\excel\security" /v "blockcontentexecutionfrominternet" /t REG_DWORD /d 1 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\excel\security" /v "excelbypassencryptedmacroscan" /t REG_DWORD /d 0 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\ms project\security" /v "vbawarnings" /t REG_DWORD /d 4 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\ms project\security" /v "level" /t REG_DWORD /d 4 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\outlook\security" /v "level" /t REG_DWORD /d 4 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\powerpoint\security" /v "vbawarnings" /t REG_DWORD /d 4 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\powerpoint\security" /v "blockcontentexecutionfrominternet" /t REG_DWORD /d 1 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\publisher\security" /v "vbawarnings" /t REG_DWORD /d 4 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\visio\security" /v "vbawarnings" /t REG_DWORD /d 4 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\visio\security" /v "blockcontentexecutionfrominternet" /t REG_DWORD /d 1 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\word\security" /v "vbawarnings" /t REG_DWORD /d 4 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\word\security" /v "blockcontentexecutionfrominternet" /t REG_DWORD /d 1 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\word\security" /v "wordbypassencryptedmacroscan" /t REG_DWORD /d 0 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\common\security" /v "automationsecurity" /t REG_DWORD /d 3 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\SystemCertificates\Root\ProtectedRoots" /v "Flags" /t REG_DWORD /d 1 /f
-reg delete "HKU\$CURRENT_USER_SID\Environment" /v "UserInitMprLogonScript" /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\outlook\options\mail" /v "blockextcontent" /t REG_DWORD /d 1 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\office\16.0\outlook\options\mail" /v "junkmailenablelinks" /t REG_DWORD /d 0 /f
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\16.0\access\security" -ValueName "vbawarnings" -Type DWord -Data 4
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\16.0\excel\security" -ValueName "vbawarnings" -Type DWord -Data 4
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\16.0\excel\security" -ValueName "blockcontentexecutionfrominternet" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\16.0\excel\security" -ValueName "excelbypassencryptedmacroscan" -Type DWord -Data 0
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\16.0\ms project\security" -ValueName "vbawarnings" -Type DWord -Data 4
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\16.0\ms project\security" -ValueName "level" -Type DWord -Data 4
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\16.0\outlook\security" -ValueName "level" -Type DWord -Data 4
+AddUsersRegistryValue "HKCU\Software\Policies\Microsoft\office\16.0\powerpoint\security" -ValueName "vbawarnings" -Type DWord -Data 4
+AddUsersRegistryValue "HKCU\Software\Policies\Microsoft\office\16.0\powerpoint\security" -ValueName "blockcontentexecutionfrominternet" -Type DWord -Data 4
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\16.0\publisher\security" -ValueName "vbawarnings" -Type DWord -Data 4
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\16.0\visio\security" -ValueName "vbawarnings" -Type DWord -Data 4
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\16.0\visio\security" -ValueName "blockcontentexecutionfrominternet" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\16.0\word\security" -ValueName "vbawarnings" -Type DWord -Data 4
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\16.0\word\security" -ValueName "blockcontentexecutionfrominternet" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\16.0\word\security" -ValueName "wordbypassencryptedmacroscan" -Type DWord -Data 0
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\common\security" -ValueName "automationsecurity" -Type DWord -Data 3
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\16.0\outlook\options\mail" -ValueName "blockextcontent" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\office\16.0\outlook\options\mail" -ValueName "junkmailenablelinks" -Type DWord -Data 0
+DeleteUsersRegistryValue -Path "HKCU\Environment" -ValueName "UserInitMprLogonScript"
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Defender Configuration" -ForegroundColor white
 
@@ -668,14 +650,14 @@ reg add "HKLM\Software\Policies\Microsoft\Edge" /v "AllowDeletingBrowserHistory"
 reg add "HKLM\Software\Policies\Microsoft\Edge\ExtensionInstallAllowlist\1" /t REG_SZ /d "odfafepnkmbhccpbejgmiehpchacaeak" /f | Out-Null
 reg add "HKLM\Software\Policies\Microsoft\Edge\ExtensionInstallForcelist\1" /t REG_SZ /d "odfafepnkmbhccpbejgmiehpchacaeak" /f | Out-Null
 reg add "HKEY_LOCAL_MACHINE\Software\Wow6432Node\Microsoft\Edge\Extensions\odfafepnkmbhccpbejgmiehpchacaeak" /v "update_url" /t REG_SZ /d "https://edge.microsoft.com/extensionwebstorebase/v1/crx" /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\MicrosoftEdge\Addons" /v "FlashPlayerEnabled" /t REG_DWORD /d 0 /f
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\MicrosoftEdge\Addons" -ValueName "FlashPlayerEnabled" -Type DWord -Data 0
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\MicrosoftEdge\Addons" /v "FlashPlayerEnabled" /t REG_DWORD /d 0 /f
 reg add "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\MicrosoftEdge\PhishingFilter" /v "PreventOverrideAppRepUnknown" /t REG_DWORD /d 1 /f
 reg add "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\MicrosoftEdge\PhishingFilter" /v "PreventOverride" /t REG_DWORD /d 1 /f
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\MicrosoftEdge\PhishingFilter" /v "EnabledV9" /t REG_DWORD /d 1 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\MicrosoftEdge\PhishingFilter" /v "PreventOverrideAppRepUnknown" /t REG_DWORD /d 1 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\MicrosoftEdge\PhishingFilter" /v "PreventOverride" /t REG_DWORD /d 1 /f
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\MicrosoftEdge\PhishingFilter" /v "EnabledV9" /t REG_DWORD /d 1 /f
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\MicrosoftEdge\PhishingFilter" -ValueName "PreventOverrideAppRepUnknown" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\MicrosoftEdge\PhishingFilter" -ValueName "PreventOverride" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\MicrosoftEdge\PhishingFilter" -ValueName "EnabledV9" -Type DWord -Data 1
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Harden Chrome" -ForegroundColor white
 
@@ -814,8 +796,8 @@ reg add "HKLM\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoAdmi
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Set Screen saver grace period to 0 seconds" -ForegroundColor white
 
 reg add "HKLM\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" /v ScreenSaverGracePeriod /t REG_DWORD /d 0 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\Windows\Control Panel\Desktop" /v ScreenSaverIsSecure /t REG_DWORD /d 1 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\Control Panel\Desktop" /v ScreenSaverIsSecure /t REG_SZ /d 1 /f | Out-Null
+AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\Windows\Control Panel\Desktop" -ValueName "ScreenSaverIsSecure" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Control Panel\Desktop" -ValueName "ScreenSaverIsSecure" -Type String -Data "1"
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Disable and clear logon cache" -ForegroundColor white
 
@@ -864,7 +846,7 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Control\CrashControl" /v AutoReboot /t RE
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Disable Windows Installer always being elevated" -ForegroundColor white
 
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Installer" /v AlwaysInstallElevated /t REG_DWORD /d 0 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Policies\Microsoft\Windows\Installer" /v AlwaysInstallElevated /t REG_DWORD /d 0 /f | Out-Null
+AddUsersRegistryValue -Path "HKCU\SOFTWARE\Policies\Microsoft\Windows\Installer" -ValueName "AlwaysInstallElevated" -Type DWord -Data 0
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Require password on wakeup" -ForegroundColor white
 
@@ -900,17 +882,17 @@ reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\NOHIDDEN" /v "DefaultValue" /t REG_DWORD /d 2 /f | Out-Null
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\SHOWALL" /v "CheckedValue" /t REG_DWORD /d 1 /f | Out-Null
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\SHOWALL" /v "DefaultValue" /t REG_DWORD /d 2 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "Hidden" /t REG_DWORD /d 1 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "ShowSuperHidden" /t REG_DWORD /d 1 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "HideFileExt" /t REG_DWORD /d 0 /f | Out-Null
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -ValueName "Hidden" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -ValueName "ShowSuperHidden" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -ValueName "HideFileExt" -Type DWord -Data 0
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Disable Autorun" -ForegroundColor white
 
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Explorer" /v NoAutoplayfornonVolume /t REG_DWORD /d 1 /f | Out-Null
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoAutorun /t REG_DWORD /d 1 /f | Out-Null
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\Explorer" /v NoDriveTypeAutoRun /t REG_DWORD /d 255 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoDriveTypeAutoRun /t REG_DWORD /d 255 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers" /v DisableAutoplay /t REG_DWORD /d 1 /f | Out-Null
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -ValueName "NoDriveTypeAutoRun" -Type DWord -Data 255
+AddUsersRegistryValue -Path "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers" -ValueName "DisableAutoplay" -Type DWord -Data 1
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Enable DEP and heap termination for explorer" -ForegroundColor white
 
@@ -944,14 +926,14 @@ Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -Foregrou
 
 reg add "HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v DisableLocalMachineRunOnce /t REG_DWORD /d 1 /f | Out-Null
 reg add "HKLM\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v DisableLocalMachineRunOnce /t REG_DWORD /d 1 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v DisableLocalMachineRunOnce /t REG_DWORD /d 1 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v DisableLocalMachineRunOnce /t REG_DWORD /d 1 /f | Out-Null
+AddUsersRegistryValue -Path "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -ValueName "DisableLocalMachineRunOnce" -Type DWord -Data 1
+AddUsersRegistryValue -Path "HKCU\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer" -ValueName "DisableLocalMachineRunOnce" -Type DWord -Data 1
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Configure Ease of Access registry keys" -ForegroundColor white
 
-reg add "HKU\$CURRENT_USER_SID\Control Panel\Accessibility\StickyKeys" /v Flags /t REG_SZ /d 506 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\Control Panel\Accessibility\ToggleKeys" /v Flags /t REG_SZ /d 58 /f | Out-Null
-reg add "HKU\$CURRENT_USER_SID\Control Panel\Accessibility\Keyboard Response" /v Flags /t REG_SZ /d 122 /f | Out-Null
+AddUsersRegistryValue -Path "HKCU\Control Panel\Accessibility\StickyKeys" -ValueName "Flags" -Type String -Data 506
+AddUsersRegistryValue -Path "HKCU\Control Panel\Accessibility\ToggleKeys" -ValueName "Flags" -Type String -Data 58
+AddUsersRegistryValue -Path "HKCU\Control Panel\Accessibility\Keyboard Response" -ValueName "Flags" -Type String -Data 122
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI" /v ShowTabletKeyboard /t REG_DWORD /d 0 /f | Out-Null
 reg add "HKLM\SOFTWARE\Microsoft\Windows Embedded\EmbeddedLogon" /v BrandingNeutral /t REG_DWORD /d 8 /f | Out-Null
 
@@ -1202,11 +1184,11 @@ Set-ProcessMitigation -System -Enable DEP,EmulateAtlThunks,BottomUp,HighEntropy,
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Disable VBS Scripts" -ForegroundColor white
 
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows Script Host\Settings" /v Enabled /t REG_DWORD /d 0 /f
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows Script Host\Settings" /v ActiveDebugging /t REG_SZ /d 1 /f
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows Script Host\Settings" /v DisplayLogo /t REG_SZ /d 1 /f
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows Script Host\Settings" /v SilentTerminate /t REG_SZ /d 0 /f
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows Script Host\Settings" /v UseWINSAFER /t REG_SZ /d 1 /f
+AddUsersRegistryValue -Path "HKCU\SOFTWARE\Microsoft\Windows Script Host\Settings" -ValueName "Enabled" -Type DWord -Data 0
+AddUsersRegistryValue -Path "HKCU\SOFTWARE\Microsoft\Windows Script Host\Settings" -ValueName "ActiveDebugging" -Type String -Data 1
+AddUsersRegistryValue -Path "HKCU\SOFTWARE\Microsoft\Windows Script Host\Settings" -ValueName "DisplayLogo" -Type String -Data 1
+AddUsersRegistryValue -Path "HKCU\SOFTWARE\Microsoft\Windows Script Host\Settings" -ValueName "SilentTerminate" -Type String -Data 0
+AddUsersRegistryValue -Path "HKCU\SOFTWARE\Microsoft\Windows Script Host\Settings" -ValueName "UseWINSAFER" -Type String -Data 1
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] More shit gets configured here that I hope just works" -ForegroundColor white
 
@@ -1270,7 +1252,7 @@ bcdedit /set nx AlwaysOn
 
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths" /v "\\*\SYSVOL" /t REG_SZ /d "RequireMutualAuthentication=1, RequireIntegrity=1, RequirePrivacy=1" /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths" /v "\\*\NETLOGON" /t REG_SZ /d "RequireMutualAuthentication=1, RequireIntegrity=1, RequirePrivacy=1" /f
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Attachments" /v SaveZoneInformation /t REG_DWORD /d 2 /f
+AddUsersRegistryValue -Path "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Attachments" -ValueName "SaveZoneInformation" -Type DWord -Data 2
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] More defender shit" -ForegroundColor white
 
@@ -1540,7 +1522,7 @@ reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Mem
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Disable Bing Search" -ForegroundColor white
 
-reg add "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" /v BingSearchEnabled /t REG_DWORD /d 0 /f
+AddUsersRegistryValue "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -ValueName "BingSearchEnabled" -Type DWord -Data 0
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Mitigate digital signature hijacking" -ForegroundColor white
 
@@ -1563,8 +1545,6 @@ Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -Foregrou
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager" /v DisableWpbtExecution /t REG_DWORD /d 1 /f
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Mitigate Disk Cleanup Persistence" -ForegroundColor white
-
-.\tools\regjump.exe -accepteula HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches
 
 reg delete HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches /f
 Start-Sleep -Milliseconds 2500 # Here so that it has some time to "cool down" ig?? idk but doing the switching instantly caused errors
@@ -1604,6 +1584,7 @@ reg add HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\NetworkProvider\Orde
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Mitigate Print Monitor Persistence" -ForegroundColor white
 
 reg delete HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Monitors /f
+Start-Sleep -Milliseconds 2500 # Here so that it has some time to "cool down" ig?? idk but doing the switching instantly caused errors
 reg import .\files\RegistryDefaults\PrintMonitors.reg
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Disable Remote COM Debugging over RPC" -ForegroundColor white
@@ -1621,16 +1602,19 @@ reg delete "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Debu
 
 $ErrorActionPreference = "Continue"
 
-Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Mitigate HKCU Load Persistence" -ForegroundColor white
+Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Mitigate HU Load Persistence" -ForegroundColor white
 
-$loadKey = (Get-ItemProperty "HKCU://Software\Microsoft\Windows NT\CurrentVersion\Windows").Load
-
-if($loadKey) {
-    Write-Host "HKCU Load key is configured: $loadkey" -ForegroundColor Yellow
-    pause
+Get-ChildItem "HU:\\" | ForEach-Object {
+    if(!([string]$_.Name).EndsWith("_Classes")) {
+        $sid = $_.Name.Split("\")[1]
+        $loadKey = (Get-ItemProperty "HU://$sid\Software\Microsoft\Windows NT\CurrentVersion\Windows").Load
+        if($loadKey) {
+            Write-Host "HU Load key is configured: $loadkey" -ForegroundColor Yellow
+            pause
+        }
+        reg delete "HKU\$sid\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows" /v Load /f
+    }
 }
-
-reg delete "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows" /v Load /f
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Mitigate Recycle Bin COM Extension Handler Persistence" -ForegroundColor white
 
@@ -1690,64 +1674,49 @@ if($version -eq "19" -or $version -eq "22") {
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Detect LNK Keyboard Shortcut Persistence" -ForegroundColor white
 
-$lnkFileDirectory = "C:\Users\$(Get-Content .\CURRENT_USER.txt)\AppData\Roaming\Microsoft\Windows\Start Menu"
+$ErrorActionPreference = "SilentlyContinue"
 
-Get-ChildItem $lnkFileDirectory | ForEach-Object {
-    if($_.Name.EndsWith(".lnk")) {
-        $name = $_.Name
-        $target = (New-Object -ComObject WScript.Shell).CreateShortcut("$lnkFileDirectory\$name")
-        Write-Host "Potential Persistence Found: $lnkFileDirectory\$name" -ForegroundColor Red
-        Write-Output "Program: $($target.TargetPath)"
-        Write-Output "Arguments: $($target.Arguments)"
-        Write-Output "Hotkey: $($target.Hotkey)"
-        Write-Output ""
+Get-ChildItem "C:\Users" -Force | ForEach-Object {
+    $lnkFileDirectory = "C:\Users\$($_.Name)\AppData\Roaming\Microsoft\Windows\Start Menu"
+    if(Test-Path $lnkFileDirectory) {
+        Get-ChildItem $lnkFileDirectory | ForEach-Object {
+            if($_.Name.EndsWith(".lnk")) {
+                $name = $_.Name
+                $target = (New-Object -ComObject WScript.Shell).CreateShortcut("$lnkFileDirectory\$name")
+                Write-Host "Potential Persistence Found: $lnkFileDirectory\$name" -ForegroundColor Red
+                Write-Output "Program: $($target.TargetPath)"
+                Write-Output "Arguments: $($target.Arguments)"
+                Write-Output "Hotkey: $($target.Hotkey)"
+                Write-Output ""
+            }
+        }
     }
 }
 
-Write-Host "Check your desktop for any weird shortcuts as well as this can also apply there" -ForegroundColor Yellow
+Write-Host "Check all users' desktops for any weird shortcuts as well as this also applies there" -ForegroundColor Yellow
 
 pause
 
-Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Detect Control Panel Persistence" -ForegroundColor white
-
-$ErrorActionPreference = "SilentlyContinue"
-
-$foundPersistence = $false
-
-(Get-Item "HKCU://SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\CPLs").Property | ForEach-Object {
-    $foundPersistence = $true
-    $item = (Get-ItemProperty "HKCU://SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\CPLs\")."$_"
-    Write-Host "Persistence Found: $item" -ForegroundColor Red
-}
-
-if($foundPersistence) {
-    Read-Host "Press enter when you've investigated/deleted the above files, if any"
-}
-
-reg delete "HKU\$CURRENT_USER_SID\SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel" /f
-
-$ErrorActionPreference = "Continue"
-
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Delete Alternative Streams" -ForegroundColor white
 
+cd "\"
 .\tools\streams.exe -nobanner -accepteula -s -d C:
+cd "$PSScriptRoot"
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Reset user and system path variables" -ForegroundColor white
 
 $userPath = "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps"
 $systemPath = "%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SystemRoot%\System32\WindowsPowerShell\v1.0\;%SystemRoot%\System32\OpenSSH\"
 
-$currentUserPATH = (Get-ItemProperty -Path "HKCU://Environment").Path
 $currentSystemPATH = (Get-ItemProperty -Path "HKLM://SYSTEM\CurrentControlSet\Control\Session Manager\Environment").Path
 
-if($currentUserPATH -ne $userPath -or $currentSystemPATH -ne $systemPath) {
-    Write-Host "Current User PATH: $currentUserPath" -ForegroundColor Yellow
+if($currentSystemPATH -ne $systemPath) {
     Write-Host "Current System PATH: $currentSystemPATH" -ForegroundColor Yellow
-    Write-Host "Investigate any non-default directories in the aforementioned PATH variables" -ForegroundColor Yellow
+    Write-Host "Investigate any non-default directories in the PATH variables" -ForegroundColor Yellow
     pause
 }
 
-reg add "HKU\$CURRENT_USER_SID\Environment" /v Path /t REG_EXPAND_SZ /d $userPath /f
+AddUsersRegistryValue -Path "HKCU\Environment" -ValueName "Path" -Type String -Data $userPath
 reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path /t REG_EXPAND_SZ /d $systemPath /f
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Reset HKLM\Security ACLs" -ForegroundColor white
@@ -1764,25 +1733,6 @@ Set-Acl "HKLM:\SECURITY" -AclObject $rootACL
 
 Write-Output "Right Click highlighted key > Permissions > Advanced > Check 'Replace all child object permissions...' > OK > Yes"
 pause
-
-Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Find LSA Notification Packages/Password Filters" -ForegroundColor white
-
-$defaultFilters = @("scecli")
-$filters = (Get-ItemProperty "HKLM://SYSTEM\CurrentControlSet\Control\Lsa")."Notification Packages"
-
-foreach($filter in $filters) {
-    if(!$defaultFilters.Contains($filter)) {
-        Write-Host "Investigate the following package filter (use everything to find the file ffs): $filter" -ForegroundColor Red
-    }
-}
-
-$newFilters = ""
-
-foreach($df in $defaultFilters) {
-    $newFilters += "$df\0"
-}
-
-reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa" /v "Notification Packages" /t REG_MULTI_SZ /d $newFilters /f
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Disable Credential Delegation" -ForegroundColor white
 
@@ -1886,7 +1836,7 @@ Set-Acl -Path "C:\Windows\System32\winevt\Logs" -AclObject $folderACL
 Get-ChildItem "C:\Windows\System32\winevt\Logs" -Force | ForEach-Object {
     $acl = (Get-Acl -Path "$($_.FullName)")
     $acl.SetOwner((New-Object System.Security.Principal.NTAccount("LOCAL SERVICE")))
-    $acl.SetAccessRuleProtection($false, $false) # Allows any inheritance (shits tweaking and adds everyone perms to the object :sob:), set perms below just to be safe
+    $acl.SetAccessRuleProtection($false, $false) # Allows any inheritance (shits tweaking and adds everyone perms to the object 😭), set perms below just to be safe
     $acl.SetSecurityDescriptorSddlForm("O:LSG:LSD:AI(A;ID;FA;;;S-1-5-80-880578595-1860270145-482643319-2788375705-1540778122)(A;ID;FA;;;SY)(A;ID;FA;;;BA)")
     Set-Acl -Path "$($_.FullName)" -AclObject $acl
 }

@@ -1,6 +1,7 @@
-$isADInstalled = (Read-Host "Do you have AD installed? (y/n)").ToLower() -eq "y"
-if(!$isADInstalled) {
-    Write-Output "This is an AD specific tool"
+Import-Module .\api.ps1
+
+if(!((GetSettings).ADInstalled)) {
+    Write-Output "This is an active directory specific module"
     exit
 }
 

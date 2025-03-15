@@ -1,3 +1,10 @@
+Import-Module .\api.ps1
+
+if(!((GetSettings).ADInstalled)) {
+    Write-Output "This is an active directory specific module"
+    exit
+}
+
 function getGuestUser() {
     $users = Get-ADUser -Filter * -Properties *
     foreach($user in $users) {
@@ -39,7 +46,7 @@ clear
 
 $password = "k97(0HaZ8~9^QMcxsg15rX-z"
 
-$currentUser = Get-Content .\CURRENT_USER.txt
+$currentUser = (GetSettings).CurrentUser
 
 while(!(Test-Path .\UserData.txt)) {
     clear
