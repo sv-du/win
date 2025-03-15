@@ -815,6 +815,7 @@ Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -Foregrou
 
 reg add "HKLM\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" /v ScreenSaverGracePeriod /t REG_DWORD /d 0 /f | Out-Null
 reg add "HKU\$CURRENT_USER_SID\Software\Policies\Microsoft\Windows\Control Panel\Desktop" /v ScreenSaverIsSecure /t REG_DWORD /d 1 /f | Out-Null
+reg add "HKU\$CURRENT_USER_SID\Control Panel\Desktop" /v ScreenSaverIsSecure /t REG_SZ /d 1 /f | Out-Null
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Disable and clear logon cache" -ForegroundColor white
 
