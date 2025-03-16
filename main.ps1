@@ -21,7 +21,7 @@ if(!(Test-Path .\settings.json)) {
     $args[0] | Out-File -FilePath .\CURRENT_USER.txt
 }
 
-GetSettings
+GetSettings | Out-Null
 
 $modulePath = $PSScriptRoot + "\modules"
 $modules = @(Get-ChildItem -Path $modulePath -Filter *.ps1)
