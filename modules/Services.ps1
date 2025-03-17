@@ -1,3 +1,5 @@
+Import-Module .\api.ps1
+
 function getAllServices() {
     $services = Get-ChildItem -Path "HKLM:\SYSTEM\CurrentControlSet\Services"
     $parsedServices = [System.Collections.ArrayList]::new()

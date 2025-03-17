@@ -36,33 +36,28 @@ function AddUsersRegistryValue([string]$Path, [string]$ValueName, [Microsoft.Win
     $CommandType
     if($Type.ToString().Equals("String")) {
         $CommandType = "REG_SZ";
-        $Data = [string]$Data
     }
     if($Type.ToString().Equals("ExpandString")) {
         $CommandType = "REG_EXPAND_SZ";
-        $Data = [string]$Data
     }
     if($Type.ToString().Equals("Binary")) {
         $CommandType = "REG_BINARY";
-        $Data = [System.Byte[]]$Data
     }
     if($Type.ToString().Equals("DWord")) {
         $CommandType = "REG_DWORD";
-        $Data = [System.Int32]$Data
     }
     if($Type.ToString().Equals("MultiString")) {
         $CommandType = "REG_MULTI_SZ";
-        $Data = [System.String[]]$Data
     }
     if($Type.ToString().Equals("QWord")) {
         $CommandType = "REG_QWORD";
-        $Data = [System.Int64]$Data
     }
     if($Path.StartsWith("HKCU") -or $Path.StartsWith("HKEY_CURRENT_USER")) {
         New-PSDrive -Name HU -PSProvider Registry -Root HKEY_USERS | Out-Null
         Get-ChildItem "HU:\\" | ForEach-Object {
             if(!([string]$_.Name).EndsWith("_Classes")) {
                 $CommandPath = $_.Name + $Path.Substring($Path.IndexOf("\"))
+                #Write-Output "Command: reg.exe add `"$($CommandPath)`" /v `"$($ValueName)`" /t $($CommandType) /d `"$($Data)`" /f | Out-Null"
                 reg.exe add "$($CommandPath)" /v "$($ValueName)" /t $($CommandType) /d "$($Data)" /f | Out-Null
             }
         }
@@ -75,7 +70,8 @@ function DeleteUsersRegistryValue([string]$Path, [string]$ValueName) {
         Get-ChildItem "HU:\\" | ForEach-Object {
             if(!([string]$_.Name).EndsWith("_Classes")) {
                 $CommandPath = $_.Name + $Path.Substring($Path.IndexOf("\"))
-                reg.exe delete "$($CommandPath)" /v "$($ValueName)""" /f | Out-Null
+                #Write-Output "Command: reg.exe delete `"$($CommandPath)`" /v `"$($ValueName)`" /f | Out-Null"
+                reg.exe delete "$($CommandPath)" /v "$($ValueName)" /f | Out-Null
             }
         }
     }

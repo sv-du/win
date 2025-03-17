@@ -112,14 +112,16 @@ if($disableSignedElevation) {
     reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v ValidateAdminCodeSignatures /t REG_DWORD /d 0 /f
 }
 
+clear
+
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Creating non-default PS drives for registry" -ForegroundColor white
 
 Remove-PSDrive -Name HKCU # We are running on the SYSTEM account ; Remap PS HKCU drive to our old user drive
-New-PSDrive -Name HKCU -PSProvider Registry -Root "HKEY_USERS\$CURRENT_USER_SID"
+New-PSDrive -Name HKCU -PSProvider Registry -Root "HKEY_USERS\$CURRENT_USER_SID" | Out-Null
 
-New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT
-New-PSDrive -Name HU -PSProvider Registry -Root HKEY_USERS
-New-PSDrive -Name HCC -PSProvider Registry -Root HKEY_CURRENT_CONFIG
+New-PSDrive -Name HKCR -PSProvider Registry -Root HKEY_CLASSES_ROOT | Out-Null
+New-PSDrive -Name HU -PSProvider Registry -Root HKEY_USERS | Out-Null
+New-PSDrive -Name HCC -PSProvider Registry -Root HKEY_CURRENT_CONFIG | Out-Null
 
 Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Remove Shadow Copies" -ForegroundColor white
 vssadmin delete shadows /all
@@ -163,7 +165,7 @@ reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsFirewall\Standard
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v "Shadow" /t REG_DWORD /d 0 /f | Out-Null
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v "DisableShadowConsent" /t REG_DWORD /d 0 /f | Out-Null
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v "fDisableCcm" /t REG_DWORD /d 1 /f | Out-Null
-reg add "HKLM\SYSTЕM\CurrеntControlSеt\Control\Tеrminal Sеrvеr" /v "AllowRemotеRPC" /t REG_DWORD /d 0 /f | Out-Null
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v "AllowRemoteRPC" /t REG_DWORD /d 0 /f | Out-Null
 AddUsersRegistryValue -Path "HKCU\Software\Policies\Microsoft\Windows NT\Terminal Services" -ValueName "fInheritInitialProgram" -Type DWord -Data 0
 DeleteUsersRegistryValue -Path "HKCU\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" -ValueName "InitialProgram"
 DeleteUsersRegistryValue -Path "HKCU\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" -ValueName "WorkDirectory"
