@@ -1,7 +1,14 @@
 Import-Module .\api.ps1
 
 function getAllDrivers() {
-    # Code later
+    $driverHashes = [System.Collections.ArrayList]::new()
+    Get-ChildItem "C:\Windows\System32\drivers" -Recurse | ForEach-Object {
+        if(!(Test-Path "$($_.FullName)" -PathType Container)) {
+            $hash = (Get-FileHash -Algorithm SHA256 "$($_.FullName)").Hash
+            $driverHashes.Add($hash) | Out-Null
+        }
+    }
+    return $driverHashes
 }
 
 $fileName = GetBaselineFileName
@@ -16,8 +23,18 @@ if($isCreatingBaseline) {
 
 Write-Output "Fetching baseline"
 
-# Code later
+if(!(Test-Path ".\baselines\drivers\$fileName.txt")) {
+    Write-Output "Baseline file not found, stopping script"
+    exit
+}
 
-Write-Output "Fetching unsigned drivers"
+$baselineDrivers = [System.Collections.ArrayList]((Get-Content ".\baselines\drivers\$fileName.txt") | ConvertFrom-Json)
 
-# Code later
+Get-ChildItem "C:\Windows\System32\drivers" -Recurse | ForEach-Object {
+    if(!(Test-Path "$($_.FullName)" -PathType Container)) {
+        $hash = (Get-FileHash -Algorithm SHA256 "$($_.FullName)").Hash
+        if(!$baselineDrivers.Contains($hash)) {
+            Write-Host "The following driver, $($_.FullName), is installed but not part of the baseline. Investigate" -ForegroundColor Red
+        }
+    }
+}
