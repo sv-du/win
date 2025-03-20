@@ -9,14 +9,15 @@ Set-NetFirewallProfile -DefaultInboundAction Block -DefaultOutboundAction Allow 
 Set-NetFirewallProfile -LogBlocked True -LogMaxSizeKilobytes 16384 -LogAllowed True
 Set-NetFirewallProfile -Name Public -AllowLocalFirewallRules False
 netsh advfirewall set allprofiles settings unicastresponsetomulticast disable
-
+netsh advfirewall firewall set multicastbroadcastresponse disable
+netsh advfirewall firewall set multicastbroadcastresponse mode=disable profile=all
 netsh advfirewall firewall set rule name="netcat" new enable=no
-netsh advfirewall firewall set rule name="Remote Assistance (DCOM-In)" new enable=no 
-netsh advfirewall firewall set rule name="Remote Assistance (PNRP-In)" new enable=no 
-netsh advfirewall firewall set rule name="Remote Assistance (RA Server TCP-In)" new enable=no 
-netsh advfirewall firewall set rule name="Remote Assistance (SSDP TCP-In)" new enable=no 
-netsh advfirewall firewall set rule name="Remote Assistance (SSDP UDP-In)" new enable=no 
-netsh advfirewall firewall set rule name="Remote Assistance (TCP-In)" new enable=no 
+netsh advfirewall firewall set rule name="Remote Assistance (DCOM-In)" new enable=no
+netsh advfirewall firewall set rule name="Remote Assistance (PNRP-In)" new enable=no
+netsh advfirewall firewall set rule name="Remote Assistance (RA Server TCP-In)" new enable=no
+netsh advfirewall firewall set rule name="Remote Assistance (SSDP TCP-In)" new enable=no
+netsh advfirewall firewall set rule name="Remote Assistance (SSDP UDP-In)" new enable=no
+netsh advfirewall firewall set rule name="Remote Assistance (TCP-In)" new enable=no
 netsh advfirewall firewall set rule name="Telnet Server" new enable=no
 
 netsh advfirewall firewall set rule group="Network Discovery" new enable=No

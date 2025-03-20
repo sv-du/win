@@ -496,3 +496,14 @@ Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -Foregrou
 
 reg add "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" /v "ForceUnlockLogon" /t REG_DWORD /d 1 /f
 
+Write-Host "[" -ForegroundColor white -NoNewLine; Write-Host "SUCCESS" -ForegroundColor green -NoNewLine; Write-Host "] Set domain and forest types to latest versions" -ForegroundColor white
+
+try {
+    Set-ADDomainMode -Identity $env:USERDOMAIN -DomainMode Windows2025Domain
+    $Forest = Get-ADForest
+    Set-ADForestMode -Identity $Forest -Server $Forest.SchemaMaster -ForestMode Windows2025Forest
+} catch {
+    Set-ADDomainMode -Identity $env:USERDOMAIN -DomainMode Windows2016Domain
+    $Forest = Get-ADForest
+    Set-ADForestMode -Identity $Forest -Server $Forest.SchemaMaster -ForestMode Windows2016Forest
+}

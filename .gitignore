@@ -1,7 +1,8 @@
-tools/PersistenceSniper
+tools/BloodHound
+tools/BlueSpawn
 tools/HardeningKitty
-
-tools/HardeningKitty.zip
+tools/PersistenceSniper
+tools/PingCastle
 
 CURRENT_USER.txt
 UserData.txt
