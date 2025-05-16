@@ -141,7 +141,10 @@ Write-Output "Enabling all non-builtin accounts"
 
 $users = Get-ADUser -Filter * -Properties *
 
-foreach($user in $users) { Enable-ADAccount "$user" }
+foreach($user in $users) {
+    if($builtInAccounts.Contains($user.Name)) { continue }
+    Enable-ADAccount "$user"
+}
 
 Write-Output "Setting all users primary group to 'Domain Users'"
 
